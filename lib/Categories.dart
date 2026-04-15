@@ -44,7 +44,7 @@ class _CategoriesState extends State<Categories> {
                 );
               },
               child: Text(
-                'Add Subscription',
+                'Add Category',
                 style: TextStyle(color: Colors.black),
               ),
             ),
@@ -64,6 +64,10 @@ class Addcat extends StatefulWidget {
 }
 
 class _AddcatState extends State<Addcat> {
+  final nameController = TextEditingController();
+  final iconController = TextEditingController();
+  final colourController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +75,49 @@ class _AddcatState extends State<Addcat> {
         title: Text('Add Category', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Colors.green,
+      ),
+      body: Column(
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: InputDecoration(labelText: "Name"),
+          ),
+          TextField(
+            controller: iconController,
+            decoration: InputDecoration(labelText: "Icon"),
+          ),
+          TextField(
+            controller: colourController,
+            decoration: InputDecoration(labelText: "Colour"),
+          ),
+          SizedBox(height: 100),
+
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isEmpty == true ||
+                  iconController.text.isEmpty == true ||
+                  colourController.text.isEmpty == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Do not leave any field',
+                      style: TextStyle(color: Colors.black),
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                  ),
+                );
+              } else {
+                // insertUser();
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: Text('INSERT USER', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
