@@ -33,7 +33,32 @@ class _CategoriesState extends State<Categories> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // GridView(gridDelegate: gridDelegate),
+          Expanded(
+            child: GridView.count(
+              primary: false,
+              padding: EdgeInsets.all(20),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              crossAxisCount: 3,
+              children: <Widget>[
+                Container(
+                  padding: EdgeInsets.all(8),
+                  color: Colors.lightGreen,
+                  child: Icon(Icons.tv),
+                ),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  color: Colors.lightGreen,
+                  child: Icon(Icons.shopping_cart),
+                ),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  color: Colors.lightGreen,
+                  child: Icon(Icons.menu_book),
+                ),
+              ],
+            ),
+          ),
           Spacer(),
           Center(
             child: ElevatedButton(
@@ -104,14 +129,21 @@ class _AddcatState extends State<Addcat> {
                       style: TextStyle(color: Colors.black),
                       textAlign: TextAlign.center,
                     ),
-                    backgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50),
-                    ),
+                    backgroundColor: Colors.green[300],
                   ),
                 );
               } else {
                 // insertUser();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Category Successfully Added',
+                      style: TextStyle(color: Colors.black),
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.green[300],
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
