@@ -93,6 +93,8 @@ class _AddcatState extends State<Addcat> {
   final iconController = TextEditingController();
   final colourController = TextEditingController();
 
+  //add methods here
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
