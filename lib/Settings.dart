@@ -42,7 +42,9 @@ class _SettingsState extends State<Settings> {
               ),
               Switch(
                 value: light,
-                activeColor: Colors.green[900],
+                // activeColor: Colors.green[900],
+                activeColor: Color(0xFF7A9E6E),
+                inactiveThumbColor: Colors.green[300],
                 onChanged: (bool value) {
                   setState(() {
                     light = value;
@@ -112,7 +114,7 @@ class _FontState extends State<Font> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Font', textAlign: TextAlign.center),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF7A9E6E),
       ),
       body: Column(
         children: [
@@ -148,7 +150,7 @@ class _CurrencyState extends State<Currency> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Currency', textAlign: TextAlign.center),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF7A9E6E),
       ),
       body: Column(
         children: [
@@ -184,14 +186,13 @@ class _LanguagesState extends State<Languages> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Languages', textAlign: TextAlign.center),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF7A9E6E),
       ),
       body: Column(
         children: [
           RadioListTile(
             title: Text('English'),
             value: 'English',
-
             // groupValue: null,
             // onChanged: (value) => onFontChanged(value),
           ),

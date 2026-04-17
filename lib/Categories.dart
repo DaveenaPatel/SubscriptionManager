@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:project/Subscriptions.dart';
 import 'Subscriptions.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // void main() {
 //   runApp(const MyApp());
@@ -89,10 +91,8 @@ class _CategoriesState extends State<Categories> {
                 style: TextStyle(color: Colors.black),
               ),
             ),
-
           ),
-          SizedBox(height: 20,),
-
+          SizedBox(height: 20),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -129,6 +129,15 @@ class _CategoriesState extends State<Categories> {
   }
 }
 
+List<String> colours = <String>[
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'blue',
+  'purple',
+];
+
 class Addcat extends StatefulWidget {
   const Addcat({super.key});
 
@@ -140,8 +149,39 @@ class _AddcatState extends State<Addcat> {
   final nameController = TextEditingController();
   final iconController = TextEditingController();
   final colourController = TextEditingController();
+  String dropdownValue = colours.first;
 
   //add methods here
+  CollectionReference categories = FirebaseFirestore.instance.collection('Categories');
+
+  String id = '';
+  String name = '';
+  String icon = '';
+  String colour = '';
+  String subscriptions = '';
+
+  Future<void> addCategories() async {
+    if (name.isNotEmpty && icon.isNotEmpty && colour.isEmpty && subscriptions.isEmpty) {
+      await categories.add({'id': id,'name': name, 'icon': icon, 'colour': colour, 'subscriptions': subscriptions });
+      setState(() {
+        id = '';
+        name = '';
+        icon = '';
+        colour = '';
+        subscriptions = '';
+      });
+    }
+  }
+
+  Future<void> updateCategories(String id) async {
+    await categories
+        .doc(id)
+        .update({'id': 'new id', 'name': 'new name', 'icon': 'new icon', 'colour': 'new colour', 'subscriptions': 'new subscriptions'});
+  }
+
+  Future<void> deleteCategories(String id) async {
+    await categories.doc(id).delete();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,13 +201,22 @@ class _AddcatState extends State<Addcat> {
             controller: iconController,
             decoration: InputDecoration(labelText: "Icon"),
           ),
-          TextField(
-            controller: colourController,
-            decoration: InputDecoration(labelText: "Colour"),
+          DropdownButton(
+            value: dropdownValue,
+            icon: Icon(Icons.brush_outlined),
+            elevation: 16,
+
+            items: colours.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text(value));
+            }).toList(),
+            onChanged: (String? value) {
+              setState(() {
+                dropdownValue = value!;
+              });
+            },
           ),
           // SizedBox(height: 100),
           Spacer(),
-
 
           Container(
             width: double.infinity,
@@ -177,45 +226,46 @@ class _AddcatState extends State<Addcat> {
               color: Color(0xFF7A9E6E),
               borderRadius: BorderRadius.circular(20),
             ),
-              child:
-              ElevatedButton(
-                onPressed: () {
-                  if (nameController.text.isEmpty == true ||
-                      iconController.text.isEmpty == true ||
-                      colourController.text.isEmpty == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Do not leave any field',
-                          style: TextStyle(color: Colors.black),
-                          textAlign: TextAlign.center,
-                        ),
-                        backgroundColor: Colors.green[300],
+            child: ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isEmpty == true ||
+                    iconController.text.isEmpty == true ||
+                    colourController.text.isEmpty == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Do not leave any field',
+                        style: TextStyle(color: Colors.black),
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  } else {
-                    // insertUser();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Category Successfully Added',
-                          style: TextStyle(color: Colors.black),
-                          textAlign: TextAlign.center,
-                        ),
-                        backgroundColor: Colors.green[300],
+                      backgroundColor: Colors.green[300],
+                    ),
+                  );
+                } else {
+                  // insertUser();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Category Successfully Added',
+                        style: TextStyle(color: Colors.black),
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFD6E8CC),
-                  foregroundColor: Colors.black,
-                  shape: StadiumBorder(),
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text('Add Category', style: TextStyle(color: Colors.black)),
+                      backgroundColor: Colors.green[300],
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFD6E8CC),
+                foregroundColor: Colors.black,
+                shape: StadiumBorder(),
+                padding: EdgeInsets.symmetric(vertical: 16),
               ),
-
+              child: Text(
+                'Add Category',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
           ),
           SizedBox(height: 20),
           Row(
