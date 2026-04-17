@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'Categories.dart';
+import 'Settings.dart';
 
 void main() {
   runApp(const MyApp());
@@ -61,7 +62,15 @@ class _SubscriptionsState extends State<Subscriptions> {
         title: Text('Subscriptions', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
-        leading: Icon(Icons.arrow_circle_right_outlined),
+        leading: GestureDetector(
+          onHorizontalDragEnd: (d) {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Settings()),
+            );
+          },
+          child: Icon(Icons.arrow_circle_right_outlined),
+        ),
       ),
       body: Column(
         children: [

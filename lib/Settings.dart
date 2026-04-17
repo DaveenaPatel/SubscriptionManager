@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+// void main() {
+//   runApp(const MyApp());
+// }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -28,7 +28,7 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings', textAlign: TextAlign.center),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF7A9E6E),
       ),
       body: Column(
         // mainAxisAlignment: MainAxisAlignment.start,
