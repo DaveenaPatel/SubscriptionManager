@@ -85,7 +85,13 @@ class _SettingsState extends State<Settings> {
 
           Spacer(),
           TextButton(
-            onPressed: () => {},
+            onPressed: () => {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                  (r) => false
+              ),
+            },
             child: Text(
               'Log Out',
               style: TextStyle(
