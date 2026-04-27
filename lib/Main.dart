@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'splash.dart';
 
 void main() async {
 
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: Manager(), debugShowCheckedModeBanner: false );
+    return MaterialApp(home: SplashScreenPage(), debugShowCheckedModeBanner: false );
   }
 }
 
