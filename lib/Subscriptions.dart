@@ -45,6 +45,127 @@ class _SubscriptionsState extends State<Subscriptions> {
 
           final docs = snapshot.data!.docs;
 
+          // Empty state
+          if (docs.isEmpty) {
+            return Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.subscriptions_outlined,
+                            size: 64, color: Colors.grey[400]),
+                        SizedBox(height: 16),
+                        Text(
+                          'No subscriptions found.',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Add a new subscription to get started!',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Total monthly (shows 0.00)
+                Container(
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF7A9E6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Monthly',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          Text(
+                            '0.00',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AddSubscription(
+                                  subscriptionsRef: subscriptionsRef,
+                                )),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Icon(Icons.add, color: Colors.white, size: 28),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Bottom nav bar
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.monetization_on_outlined, color: Colors.black),
+                          Text('Subscriptions', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => Categories()),
+                          );
+                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.grid_view, color: Colors.black),
+                            Text('Categories', style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+
           // Calculate total monthly from firestore data
           double totalMonthly = docs.fold(0, (sum, doc) {
             return sum + (double.tryParse(doc['price'].toString()) ?? 0);
@@ -144,8 +265,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                       children: [
                         Text(
                           'Total Monthly',
-                          style:
-                          TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         Text(
                           totalMonthly.toStringAsFixed(2),
@@ -183,8 +303,7 @@ class _SubscriptionsState extends State<Subscriptions> {
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  border:
-                  Border(top: BorderSide(color: Colors.grey[300]!)),
+                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -194,8 +313,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                       children: [
                         Icon(Icons.monetization_on_outlined,
                             color: Colors.black),
-                        Text('Subscriptions',
-                            style: TextStyle(fontSize: 12)),
+                        Text('Subscriptions', style: TextStyle(fontSize: 12)),
                       ],
                     ),
                     GestureDetector(
@@ -210,8 +328,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.grid_view, color: Colors.black),
-                          Text('Categories',
-                              style: TextStyle(fontSize: 12)),
+                          Text('Categories', style: TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
@@ -369,7 +486,8 @@ class _AddSubscriptionState extends State<AddSubscription> {
               onTap: () async {
                 final selected = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (context) => Categories(pickMode: true)),
+                  MaterialPageRoute(
+                      builder: (context) => Categories(pickMode: true)),
                 );
                 if (selected != null) {
                   categoryController.text = selected;
@@ -552,7 +670,8 @@ class _EditSubscriptionState extends State<EditSubscription> {
               onTap: () async {
                 final selected = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (context) => Categories(pickMode: true)),
+                  MaterialPageRoute(
+                      builder: (context) => Categories(pickMode: true)),
                 );
                 if (selected != null) {
                   categoryController.text = selected;
