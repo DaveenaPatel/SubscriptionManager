@@ -1,29 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'Categories.dart';
-import 'settings.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-      options: FirebaseOptions(
-          apiKey: "AIzaSyBvwIWP5gfD_IuZlOj44Z5N7xQefFMFN2U",
-          appId: "283615807014",
-          messagingSenderId: "1:283615807014:android:b7d291f99bab0ab72e08e7",
-          projectId: "subwallet-864ed"));
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(home: Subscriptions(), debugShowCheckedModeBanner: false);
-  }
-}
+import 'package:firebase_auth/firebase_auth.dart';
 
 // main subscription screen
 class Subscriptions extends StatefulWidget {
@@ -34,7 +13,13 @@ class Subscriptions extends StatefulWidget {
 }
 
 class _SubscriptionsState extends State<Subscriptions> {
-  CollectionReference subscriptionsRef =
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+  late final Query subscriptionsQuery = FirebaseFirestore.instance
+      .collection('subscriptions')
+      .where('userId', isEqualTo: currentUserId);
+
+  late final CollectionReference subscriptionsRef =
   FirebaseFirestore.instance.collection('subscriptions');
 
   // Delete subscription from Firestore
@@ -49,21 +34,13 @@ class _SubscriptionsState extends State<Subscriptions> {
         title: Text('Subscriptions', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
-        // leading: GestureDetector(
-        //   onTap: () {
-        //     Navigator.push(
-        //       context,
-        //       MaterialPageRoute(builder: (context) => Settings()),
-        //     );
-        //   },
-        //   child: Icon(Icons.arrow_circle_right_outlined),
-        // ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: subscriptionsRef.snapshots(),
+        stream: subscriptionsQuery.snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator(color: Color(0xFF7A9E6E)));
+            return Center(
+                child: CircularProgressIndicator(color: Color(0xFF7A9E6E)));
           }
 
           final docs = snapshot.data!.docs;
@@ -75,7 +52,7 @@ class _SubscriptionsState extends State<Subscriptions> {
 
           return Column(
             children: [
-              //pie chart
+              // pie chart
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
@@ -93,7 +70,8 @@ class _SubscriptionsState extends State<Subscriptions> {
                   children: docs.map((doc) {
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
@@ -107,7 +85,8 @@ class _SubscriptionsState extends State<Subscriptions> {
                               color: Color(0xFFB5738A),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.attach_money, color: Colors.white, size: 22),
+                            child: Icon(Icons.attach_money,
+                                color: Colors.white, size: 22),
                           ),
                           SizedBox(width: 12),
                           // Name
@@ -128,7 +107,8 @@ class _SubscriptionsState extends State<Subscriptions> {
                                     docId: doc.id,
                                     currentName: doc['name'],
                                     currentPrice: doc['price'].toString(),
-                                    currentCategory: doc['category'].toString(),
+                                    currentCategory:
+                                    doc['category'].toString(),
                                     currentInterval: doc['interval'],
                                     subscriptionsRef: subscriptionsRef,
                                   ),
@@ -148,7 +128,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                 ),
               ),
 
-              //total monthly
+              // total monthly
               Container(
                 margin: EdgeInsets.all(16),
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -164,7 +144,8 @@ class _SubscriptionsState extends State<Subscriptions> {
                       children: [
                         Text(
                           'Total Monthly',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style:
+                          TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         Text(
                           totalMonthly.toStringAsFixed(2),
@@ -180,9 +161,10 @@ class _SubscriptionsState extends State<Subscriptions> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => AddSubscription(
-                            subscriptionsRef: subscriptionsRef,
-                          )),
+                          MaterialPageRoute(
+                              builder: (context) => AddSubscription(
+                                subscriptionsRef: subscriptionsRef,
+                              )),
                         );
                       },
                       child: Container(
@@ -197,11 +179,12 @@ class _SubscriptionsState extends State<Subscriptions> {
                 ),
               ),
 
-              //bottom nav bar
+              // bottom nav bar
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  border:
+                  Border(top: BorderSide(color: Colors.grey[300]!)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -209,22 +192,26 @@ class _SubscriptionsState extends State<Subscriptions> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.monetization_on_outlined, color: Colors.black),
-                        Text('Subscriptions', style: TextStyle(fontSize: 12)),
+                        Icon(Icons.monetization_on_outlined,
+                            color: Colors.black),
+                        Text('Subscriptions',
+                            style: TextStyle(fontSize: 12)),
                       ],
                     ),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => Categories()),
+                          MaterialPageRoute(
+                              builder: (context) => Categories()),
                         );
                       },
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.grid_view, color: Colors.black),
-                          Text('Categories', style: TextStyle(fontSize: 12)),
+                          Text('Categories',
+                              style: TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
@@ -255,8 +242,8 @@ class PieChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final total = docs.fold(0.0, (sum, doc) =>
-    sum + (double.tryParse(doc['price'].toString()) ?? 0));
+    final total = docs.fold(0.0,
+            (sum, doc) => sum + (double.tryParse(doc['price'].toString()) ?? 0));
     if (total == 0) return;
 
     final paint = Paint()..style = PaintingStyle.fill;
@@ -299,7 +286,6 @@ class _AddSubscriptionState extends State<AddSubscription> {
   final categoryController = TextEditingController();
   final intervalController = TextEditingController();
 
-  // Add to Firestore (like teacher's addUser)
   Future<void> _addSubscription() async {
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
@@ -317,6 +303,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
       );
     } else {
       await widget.subscriptionsRef.add({
+        'userId': FirebaseAuth.instance.currentUser!.uid,
         'name': nameController.text,
         'price': double.tryParse(priceController.text) ?? 0,
         'category': categoryController.text,
@@ -340,7 +327,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Subscriptions', textAlign: TextAlign.center),
+        title: Text('Add Subscription', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
       ),
@@ -379,11 +366,14 @@ class _AddSubscriptionState extends State<AddSubscription> {
             ),
             SizedBox(height: 16),
             GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final selected = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (context) => Categories()),
+                  MaterialPageRoute(builder: (context) => Categories(pickMode: true)),
                 );
+                if (selected != null) {
+                  categoryController.text = selected;
+                }
               },
               child: AbsorbPointer(
                 child: TextField(
@@ -391,6 +381,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   decoration: InputDecoration(
                     labelText: 'Category',
                     labelStyle: TextStyle(color: Colors.grey),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
@@ -431,7 +422,8 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   shape: StadiumBorder(),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: Text('Add Subscription', style: TextStyle(fontSize: 16)),
+                child:
+                Text('Add Subscription', style: TextStyle(fontSize: 16)),
               ),
             ),
             SizedBox(height: 16),
@@ -442,7 +434,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
   }
 }
 
-// edit subscription screen
+// ─── Edit Subscription Screen ───
 class EditSubscription extends StatefulWidget {
   final String docId;
   final String currentName;
@@ -480,7 +472,6 @@ class _EditSubscriptionState extends State<EditSubscription> {
     intervalController = TextEditingController(text: widget.currentInterval);
   }
 
-  // update
   Future<void> _updateSubscription() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -513,7 +504,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
         );
         Navigator.pop(context);
       } catch (error) {
-        print('Failed to update');
+        print('Failed to update: $error');
       }
     }
   }
@@ -557,15 +548,29 @@ class _EditSubscriptionState extends State<EditSubscription> {
               ),
             ),
             SizedBox(height: 16),
-            TextField(
-              controller: categoryController,
-              decoration: InputDecoration(
-                labelText: 'Category',
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFF7A9E6E)),
+            GestureDetector(
+              onTap: () async {
+                final selected = await Navigator.push<String>(
+                  context,
+                  MaterialPageRoute(builder: (context) => Categories(pickMode: true)),
+                );
+                if (selected != null) {
+                  categoryController.text = selected;
+                }
+              },
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: categoryController,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF7A9E6E)),
+                    ),
+                  ),
                 ),
               ),
             ),

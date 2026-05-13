@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
-void main() {
-  runApp(const MyApp());
-}
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'Subscriptions.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(home: LoginScreen(), debugShowCheckedModeBanner: false);
-  }
-}
-//login screen
+// login screen
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,14 +12,69 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please fill in all fields',
+            style: TextStyle(color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.green[300],
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Subscriptions()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'No account found for that email.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Incorrect password.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email address.';
+      } else {
+        message = 'Login failed. Please try again.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: TextStyle(color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.green[300],
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register', textAlign: TextAlign.center),
+        title: Text('SubWallet', textAlign: TextAlign.center),
+        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -38,11 +85,11 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Spacer(),
-
             TextField(
-              controller: usernameController,
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                labelText: 'User Name',
+                labelText: 'Email',
                 labelStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
@@ -68,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(height: 24),
-
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(24),
@@ -80,23 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // Log In button
                   ElevatedButton(
-                    onPressed: () {
-                      if (usernameController.text.isEmpty ||
-                          passwordController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Do not leave any field',
-                              style: TextStyle(color: Colors.black),
-                              textAlign: TextAlign.center,
-                            ),
-                            backgroundColor: Colors.green[300],
-                          ),
-                        );
-                      } else {
-                        //handle login
-                      }
-                    },
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFD6E8CC),
                       foregroundColor: Colors.black,
@@ -104,7 +134,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: EdgeInsets.symmetric(vertical: 16),
                       minimumSize: Size(double.infinity, 0),
                     ),
-                    child: Text('Log In', style: TextStyle(fontSize: 16)),
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text('Log In', style: TextStyle(fontSize: 16)),
                   ),
                   SizedBox(height: 16),
                   // Sign Up button
@@ -135,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Sign up scrren
+//Sign Up Screen
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -148,17 +187,92 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _signUp() async {
+    if (firstNameController.text.isEmpty ||
+        lastNameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please fill in all fields',
+            style: TextStyle(color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.green[300],
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      //Create the auth account
+      UserCredential credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Save first/last name to Firestore under users collection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+        'firstName': firstNameController.text.trim(),
+        'lastName': lastNameController.text.trim(),
+        'email': emailController.text.trim(),
+      });
+
+      showDialog(
+        context: context,
+        builder: (context) => AccountCreatedDialog(),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'weak-password') {
+        message = 'Password must be at least 6 characters.';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'An account already exists for that email.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email address.';
+      } else {
+        message = 'Sign up failed. Please try again.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: TextStyle(color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.green[300],
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Account', textAlign: TextAlign.center),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Spacer(),
-
             TextField(
               controller: firstNameController,
               decoration: InputDecoration(
@@ -217,7 +331,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             SizedBox(height: 24),
-
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(24),
@@ -226,29 +339,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: ElevatedButton(
-                onPressed: () {
-                  if (firstNameController.text.isEmpty ||
-                      lastNameController.text.isEmpty ||
-                      emailController.text.isEmpty ||
-                      passwordController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Do not leave any field',
-                          style: TextStyle(color: Colors.black),
-                          textAlign: TextAlign.center,
-                        ),
-                        backgroundColor: Colors.green[300],
-                      ),
-                    );
-                  } else {
-                    // handle sign up
-                    showDialog(
-                      context: context,
-                      builder: (context) => AccountCreatedDialog(),
-                    );
-                  }
-                },
+                onPressed: _isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFFD6E8CC),
                   foregroundColor: Colors.black,
@@ -256,7 +347,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   padding: EdgeInsets.symmetric(vertical: 16),
                   minimumSize: Size(double.infinity, 0),
                 ),
-                child: Text('Create Account', style: TextStyle(fontSize: 16)),
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.black,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text('Create Account', style: TextStyle(fontSize: 16)),
               ),
             ),
             Spacer(),
@@ -298,11 +398,10 @@ class AccountCreatedDialog extends StatelessWidget {
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                // Go back to Login
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => LoginScreen()),
-                      (route) => false,
+                  (route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(

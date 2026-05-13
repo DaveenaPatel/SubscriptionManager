@@ -12,9 +12,6 @@ void main() async {
         messagingSenderId: "1:283615807014:android:b7d291f99bab0ab72e08e7",
         projectId: "subwallet-864ed"),
   );
-
-
-
   runApp(const MyApp());
 }
 
@@ -27,30 +24,3 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-class Manager extends StatefulWidget {
-  const Manager({super.key});
-
-  @override
-  State<Manager> createState() => _ManagerState();
-}
-
-class _ManagerState extends State<Manager> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-
-      ),
-      body: Column(
-
-
-      ),
-      bottomNavigationBar: BottomAppBar(
-
-
-
-      ),
-    );
-  }
-}
