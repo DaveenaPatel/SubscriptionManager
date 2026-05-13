@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'Categories.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +13,7 @@ class Subscriptions extends StatefulWidget {
 
 class _SubscriptionsState extends State<Subscriptions> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  Map<String, String> _categoryColors = {};
 
   late final Query subscriptionsQuery = FirebaseFirestore.instance
       .collection('subscriptions')
@@ -22,7 +22,28 @@ class _SubscriptionsState extends State<Subscriptions> {
   late final CollectionReference subscriptionsRef =
   FirebaseFirestore.instance.collection('subscriptions');
 
-  // Delete subscription from Firestore
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategoryColors().then((colors) {
+      setState(() => _categoryColors = colors);
+    });
+  }
+
+  // Fetch category colors from Firestore
+  Future<Map<String, String>> _fetchCategoryColors() async {
+    final snapshot =
+    await FirebaseFirestore.instance.collection('categories').get();
+    final Map<String, String> colorMap = {};
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final name = data['name']?.toString() ?? '';
+      final color = data['color']?.toString() ?? '';
+      if (name.isNotEmpty) colorMap[name] = color;
+    }
+    return colorMap;
+  }
+
   Future<void> _deleteSubscription(String id) async {
     await subscriptionsRef.doc(id).delete();
   }
@@ -77,96 +98,11 @@ class _SubscriptionsState extends State<Subscriptions> {
                     ),
                   ),
                 ),
-
-                // Total monthly (shows 0.00)
-                Container(
-                  margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF7A9E6E),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Total Monthly',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          Text(
-                            '0.00',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => AddSubscription(
-                                  subscriptionsRef: subscriptionsRef,
-                                )),
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Icon(Icons.add, color: Colors.white, size: 28),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Bottom nav bar
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.monetization_on_outlined, color: Colors.black),
-                          Text('Subscriptions', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Categories()),
-                          );
-                        },
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.grid_view, color: Colors.black),
-                            Text('Categories', style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildBottomBar(totalMonthly: 0, docs: docs),
               ],
             );
           }
 
-          // Calculate total monthly from firestore data
           double totalMonthly = docs.fold(0, (sum, doc) {
             return sum + (double.tryParse(doc['price'].toString()) ?? 0);
           });
@@ -177,9 +113,9 @@ class _SubscriptionsState extends State<Subscriptions> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
-                  child: CustomPaint(
-                    size: Size(200, 200),
-                    painter: PieChartPainter(docs),
+                  child: QuickChartPie(
+                    docs: docs,
+                    categoryColors: _categoryColors,
                   ),
                 ),
               ),
@@ -189,6 +125,10 @@ class _SubscriptionsState extends State<Subscriptions> {
                 child: ListView(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   children: docs.map((doc) {
+                    final category = doc['category']?.toString() ?? '';
+                    final colorStr = _categoryColors[category] ?? '';
+                    final bubbleColor = getColourFromString(colorStr);
+
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
                       padding:
@@ -203,21 +143,19 @@ class _SubscriptionsState extends State<Subscriptions> {
                           Container(
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Color(0xFFB5738A),
+                              color: bubbleColor,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(Icons.attach_money,
                                 color: Colors.white, size: 22),
                           ),
                           SizedBox(width: 12),
-                          // Name
                           Expanded(
                             child: Text(
                               doc['name'],
                               style: TextStyle(fontSize: 16),
                             ),
                           ),
-                          // Edit button
                           IconButton(
                             icon: Icon(Icons.edit_outlined),
                             onPressed: () {
@@ -228,8 +166,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                                     docId: doc.id,
                                     currentName: doc['name'],
                                     currentPrice: doc['price'].toString(),
-                                    currentCategory:
-                                    doc['category'].toString(),
+                                    currentCategory: category,
                                     currentInterval: doc['interval'],
                                     subscriptionsRef: subscriptionsRef,
                                   ),
@@ -237,7 +174,6 @@ class _SubscriptionsState extends State<Subscriptions> {
                               );
                             },
                           ),
-                          // Delete button
                           IconButton(
                             icon: Icon(Icons.delete_outline),
                             onPressed: () => _deleteSubscription(doc.id),
@@ -249,142 +185,189 @@ class _SubscriptionsState extends State<Subscriptions> {
                 ),
               ),
 
-              // total monthly
-              Container(
-                margin: EdgeInsets.all(16),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Color(0xFF7A9E6E),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Total Monthly',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                        Text(
-                          totalMonthly.toStringAsFixed(2),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AddSubscription(
-                                subscriptionsRef: subscriptionsRef,
-                              )),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: Icon(Icons.add, color: Colors.white, size: 28),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // bottom nav bar
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.monetization_on_outlined,
-                            color: Colors.black),
-                        Text('Subscriptions', style: TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => Categories()),
-                        );
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.grid_view, color: Colors.black),
-                          Text('Categories', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildBottomBar(totalMonthly: totalMonthly, docs: docs),
             ],
           );
         },
       ),
     );
   }
+
+  Widget _buildBottomBar(
+      {required double totalMonthly,
+        required List<QueryDocumentSnapshot> docs}) {
+    return Column(
+      children: [
+        Container(
+          margin: EdgeInsets.all(16),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Color(0xFF7A9E6E),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Monthly',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  Text(
+                    totalMonthly.toStringAsFixed(2),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => AddSubscription(
+                          subscriptionsRef: subscriptionsRef,
+                        )),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: Colors.grey[300]!)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.monetization_on_outlined, color: Colors.black),
+                  Text('Subscriptions', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Categories()),
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.grid_view, color: Colors.black),
+                    Text('Categories', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-// pie chart
-class PieChartPainter extends CustomPainter {
+//QuickChart pie widget
+class QuickChartPie extends StatelessWidget {
   final List<QueryDocumentSnapshot> docs;
+  final Map<String, String> categoryColors;
 
-  PieChartPainter(this.docs);
+  const QuickChartPie(
+      {super.key, required this.docs, required this.categoryColors});
 
-  final List<Color> colors = [
-    Color(0xFFE8A838),
-    Color(0xFFE07040),
-    Color(0xFFB5738A),
-    Color(0xFF7A9E6E),
-    Color(0xFF6888C0),
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final total = docs.fold(0.0,
-            (sum, doc) => sum + (double.tryParse(doc['price'].toString()) ?? 0));
-    if (total == 0) return;
-
-    final paint = Paint()..style = PaintingStyle.fill;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width, size.height) / 2;
-    double startAngle = -pi / 2;
-
-    for (int i = 0; i < docs.length; i++) {
-      final price = double.tryParse(docs[i]['price'].toString()) ?? 0;
-      final sweepAngle = (price / total) * 2 * pi;
-      paint.color = colors[i % colors.length];
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        true,
-        paint,
-      );
-      startAngle += sweepAngle;
+  String _toRgba(String colorStr) {
+    switch (colorStr.toLowerCase()) {
+      case 'red':    return 'rgba(244,67,54,0.9)';
+      case 'orange': return 'rgba(255,152,0,0.9)';
+      case 'yellow': return 'rgba(255,235,59,0.9)';
+      case 'green':  return 'rgba(76,175,80,0.9)';
+      case 'blue':   return 'rgba(33,150,243,0.9)';
+      case 'purple': return 'rgba(156,39,176,0.9)';
+      default:
+        if (colorStr.startsWith('#') && colorStr.length == 7) {
+          final r = int.parse(colorStr.substring(1, 3), radix: 16);
+          final g = int.parse(colorStr.substring(3, 5), radix: 16);
+          final b = int.parse(colorStr.substring(5, 7), radix: 16);
+          return 'rgba($r,$g,$b,0.9)';
+        }
+        return 'rgba(122,158,110,0.9)';
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  Widget build(BuildContext context) {
+    final Map<String, double> categoryTotals = {};
+    for (final doc in docs) {
+      final category = doc['category']?.toString() ?? 'Other';
+      final price = double.tryParse(doc['price'].toString()) ?? 0;
+      categoryTotals[category] = (categoryTotals[category] ?? 0) + price;
+    }
+
+    final labels = categoryTotals.keys.toList();
+    final values = categoryTotals.values.toList();
+    final colors = labels
+        .map((l) => _toRgba(categoryColors[l] ?? ''))
+        .toList();
+
+    final labelsJson = '[${labels.map((l) => '"$l"').join(',')}]';
+    final valuesJson = '[${values.join(',')}]';
+    final colorsJson = '[${colors.map((c) => '"$c"').join(',')}]';
+
+    final chartConfig = Uri.encodeComponent(
+      '{"type":"pie",'
+          '"data":{"labels":$labelsJson,'
+          '"datasets":[{"data":$valuesJson,"backgroundColor":$colorsJson}]},'
+          '"options":{"plugins":{"legend":{"position":"bottom"}}}}',
+    );
+
+    final url = 'https://quickchart.io/chart?c=$chartConfig&w=300&h=300&backgroundColor=white';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        url,
+        width: 300,
+        height: 300,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: 300,
+            height: 300,
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFF7A9E6E)),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return SizedBox(
+            width: 300,
+            height: 300,
+            child: Center(
+              child: Text('Chart unavailable',
+                  style: TextStyle(color: Colors.grey)),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
 // ─── Add Subscription Screen ───
