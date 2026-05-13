@@ -4,28 +4,9 @@ import 'Subscriptions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-      options: FirebaseOptions(
-          apiKey: "AIzaSyBvwIWP5gfD_IuZlOj44Z5N7xQefFMFN2U",
-          appId: "283615807014",
-          messagingSenderId: "1:283615807014:android:b7d291f99bab0ab72e08e7",
-          projectId: "subwallet-864ed"));
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(home: Categories(), debugShowCheckedModeBanner: false);
-  }
-}
-
 class Categories extends StatefulWidget {
-  const Categories({super.key});
+  final bool pickMode;
+  const Categories({super.key, this.pickMode = false});
 
   @override
   State<Categories> createState() => _CategoriesState();
@@ -79,9 +60,9 @@ class _CategoriesState extends State<Categories> {
                   if(docs.isEmpty){
                     return Center(child: Text('No Categories'),);
                   }
-                  
+
                   return GridView.builder(
-                    padding: EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20), 
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 10,
@@ -93,15 +74,19 @@ class _CategoriesState extends State<Categories> {
 
                       return GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CatWithSub(
-                                categoryName: data['name'] ?? '',
-                                categoryColor: getColourFromString(data['color'] ?? ''),
+                          if (widget.pickMode) {
+                            Navigator.pop(context, data['name'] ?? '');
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CatWithSub(
+                                  categoryName: data['name'] ?? '',
+                                  categoryColor: getColourFromString(data['color'] ?? ''),
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                         child:
                         Container(
