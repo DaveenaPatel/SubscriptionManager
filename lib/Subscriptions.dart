@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'Categories.dart';
-import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'Settings.dart';
 import 'settingsValues.dart';
 
 // main subscription screen
+// interval options
+const List<String> intervalOptions = [
+  '1 Week',
+  '2 Weeks',
+  '1 Month',
+  '6 Months',
+  '1 Year',
+];
+
+// main Subscriptions screen
 class Subscriptions extends StatefulWidget {
   const Subscriptions({super.key});
 
@@ -54,13 +64,7 @@ class _SubscriptionsState extends State<Subscriptions> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: ValueListenableBuilder<String>(
-          valueListenable: language,
-          builder: (context, lang, _) {
-            return Text(translate('subscriptions'));
-          },
-        ),
-        // Text('Subscriptions', textAlign: TextAlign.center),
+        title: Text('Subscriptions', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
         leading: GestureDetector(
@@ -95,11 +99,13 @@ class _SubscriptionsState extends State<Subscriptions> {
                         Icon(Icons.subscriptions_outlined,
                             size: 64, color: Colors.grey[400]),
                         SizedBox(height: 16),
-                        ValueListenableBuilder<String>(
-                          valueListenable: language,
-                          builder: (context, lang, _) {
-                            return Text(translate('noSubscriptions'), style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold,color: Colors.grey[600],),);
-                          },
+                        Text(
+                          'No subscriptions found.',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
+                          ),
                         ),
                         // Text(
                         //   'No subscriptions found.',
@@ -110,11 +116,12 @@ class _SubscriptionsState extends State<Subscriptions> {
                         //   ),
                         // ),
                         SizedBox(height: 8),
-                        ValueListenableBuilder<String>(
-                          valueListenable: language,
-                          builder: (context, lang, _) {
-                            return Text(translate('addSubscription2'), style: TextStyle( fontSize: 14,color: Colors.grey[400],) ,);
-                          },
+                        Text(
+                          'Add a new subscription to get started!',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[400],
+                          ),
                         ),
                         // Text(
                         //   'Add a new subscription to get started!',
@@ -375,9 +382,7 @@ class QuickChartPie extends StatelessWidget {
 
     final labels = categoryTotals.keys.toList();
     final values = categoryTotals.values.toList();
-    final colors = labels
-        .map((l) => _toRgba(categoryColors[l] ?? ''))
-        .toList();
+    final colors = labels.map((l) => _toRgba(categoryColors[l] ?? '')).toList();
 
     final labelsJson = '[${labels.map((l) => '"$l"').join(',')}]';
     final valuesJson = '[${values.join(',')}]';
@@ -413,16 +418,8 @@ class QuickChartPie extends StatelessWidget {
             width: 300,
             height: 300,
             child: Center(
-              child:
-              ValueListenableBuilder<String>(
-                valueListenable: language,
-                builder: (context, lang, _) {
-                  return Text(translate('chart'), style: TextStyle(color: Colors.grey));
-                },
-              ),
-
-              // Text('Chart unavailable',
-              //     style: TextStyle(color: Colors.grey)),
+              child: Text('Chart unavailable',
+                  style: TextStyle(color: Colors.grey)),
             ),
           );
         },
@@ -445,13 +442,12 @@ class _AddSubscriptionState extends State<AddSubscription> {
   final nameController = TextEditingController();
   final priceController = TextEditingController();
   final categoryController = TextEditingController();
-  final intervalController = TextEditingController();
+  String _selectedInterval = intervalOptions.first;
 
   Future<void> _addSubscription() async {
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
-        categoryController.text.isEmpty ||
-        intervalController.text.isEmpty) {
+        categoryController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -468,7 +464,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
         'name': nameController.text,
         'price': double.tryParse(priceController.text) ?? 0,
         'category': categoryController.text,
-        'interval': intervalController.text,
+        'interval': _selectedInterval,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -568,9 +564,15 @@ class _AddSubscriptionState extends State<AddSubscription> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: intervalController,
+            SizedBox(height: 24),
+            // Interval dropdown
+            Text(
+              'Billing Interval',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: _selectedInterval,
               decoration: InputDecoration(
                 labelText: translate('interval'),
                 labelStyle: TextStyle(color: Colors.grey),
@@ -581,6 +583,17 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   borderSide: BorderSide(color: Color(0xFF7A9E6E)),
                 ),
               ),
+              items: intervalOptions.map((String option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() => _selectedInterval = value);
+                }
+              },
             ),
             Spacer(),
             Container(
@@ -643,7 +656,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
   late TextEditingController nameController;
   late TextEditingController priceController;
   late TextEditingController categoryController;
-  late TextEditingController intervalController;
+  late String _selectedInterval;
 
   @override
   void initState() {
@@ -651,7 +664,9 @@ class _EditSubscriptionState extends State<EditSubscription> {
     nameController = TextEditingController(text: widget.currentName);
     priceController = TextEditingController(text: widget.currentPrice);
     categoryController = TextEditingController(text: widget.currentCategory);
-    intervalController = TextEditingController(text: widget.currentInterval);
+    _selectedInterval = intervalOptions.contains(widget.currentInterval)
+        ? widget.currentInterval
+        : intervalOptions.first;
   }
 
   Future<void> _updateSubscription() async {
@@ -679,7 +694,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
           'name': nameController.text,
           'price': double.tryParse(priceController.text) ?? 0,
           'category': categoryController.text,
-          'interval': intervalController.text,
+          'interval': _selectedInterval,
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -778,9 +793,18 @@ class _EditSubscriptionState extends State<EditSubscription> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: intervalController,
+            SizedBox(height: 24),
+            // Interval dropdown
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Billing Interval',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
+            SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: _selectedInterval,
               decoration: InputDecoration(
                 labelText: translate('interval'),
                 enabledBorder: UnderlineInputBorder(
@@ -790,6 +814,17 @@ class _EditSubscriptionState extends State<EditSubscription> {
                   borderSide: BorderSide(color: Color(0xFF7A9E6E)),
                 ),
               ),
+              items: intervalOptions.map((String option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() => _selectedInterval = value);
+                }
+              },
             ),
             Spacer(),
             Container(
