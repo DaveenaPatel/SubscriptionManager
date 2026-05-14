@@ -4,6 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // main subscription screen
+// interval options
+const List<String> intervalOptions = [
+  '1 Week',
+  '2 Weeks',
+  '1 Month',
+  '6 Months',
+  '1 Year',
+];
+
+// main Subscriptions screen
 class Subscriptions extends StatefulWidget {
   const Subscriptions({super.key});
 
@@ -322,9 +332,7 @@ class QuickChartPie extends StatelessWidget {
 
     final labels = categoryTotals.keys.toList();
     final values = categoryTotals.values.toList();
-    final colors = labels
-        .map((l) => _toRgba(categoryColors[l] ?? ''))
-        .toList();
+    final colors = labels.map((l) => _toRgba(categoryColors[l] ?? '')).toList();
 
     final labelsJson = '[${labels.map((l) => '"$l"').join(',')}]';
     final valuesJson = '[${values.join(',')}]';
@@ -384,13 +392,12 @@ class _AddSubscriptionState extends State<AddSubscription> {
   final nameController = TextEditingController();
   final priceController = TextEditingController();
   final categoryController = TextEditingController();
-  final intervalController = TextEditingController();
+  String _selectedInterval = intervalOptions.first;
 
   Future<void> _addSubscription() async {
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
-        categoryController.text.isEmpty ||
-        intervalController.text.isEmpty) {
+        categoryController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -407,7 +414,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
         'name': nameController.text,
         'price': double.tryParse(priceController.text) ?? 0,
         'category': categoryController.text,
-        'interval': intervalController.text,
+        'interval': _selectedInterval,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -493,12 +500,16 @@ class _AddSubscriptionState extends State<AddSubscription> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: intervalController,
+            SizedBox(height: 24),
+            // Interval dropdown
+            Text(
+              'Billing Interval',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: _selectedInterval,
               decoration: InputDecoration(
-                labelText: 'Interval',
-                labelStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
@@ -506,6 +517,17 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   borderSide: BorderSide(color: Color(0xFF7A9E6E)),
                 ),
               ),
+              items: intervalOptions.map((String option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() => _selectedInterval = value);
+                }
+              },
             ),
             Spacer(),
             Container(
@@ -562,7 +584,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
   late TextEditingController nameController;
   late TextEditingController priceController;
   late TextEditingController categoryController;
-  late TextEditingController intervalController;
+  late String _selectedInterval;
 
   @override
   void initState() {
@@ -570,7 +592,9 @@ class _EditSubscriptionState extends State<EditSubscription> {
     nameController = TextEditingController(text: widget.currentName);
     priceController = TextEditingController(text: widget.currentPrice);
     categoryController = TextEditingController(text: widget.currentCategory);
-    intervalController = TextEditingController(text: widget.currentInterval);
+    _selectedInterval = intervalOptions.contains(widget.currentInterval)
+        ? widget.currentInterval
+        : intervalOptions.first;
   }
 
   Future<void> _updateSubscription() async {
@@ -591,7 +615,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
           'name': nameController.text,
           'price': double.tryParse(priceController.text) ?? 0,
           'category': categoryController.text,
-          'interval': intervalController.text,
+          'interval': _selectedInterval,
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -676,11 +700,19 @@ class _EditSubscriptionState extends State<EditSubscription> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: intervalController,
+            SizedBox(height: 24),
+            // Interval dropdown
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Billing Interval',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
+            SizedBox(height: 4),
+            DropdownButtonFormField<String>(
+              value: _selectedInterval,
               decoration: InputDecoration(
-                labelText: 'Interval',
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
@@ -688,6 +720,17 @@ class _EditSubscriptionState extends State<EditSubscription> {
                   borderSide: BorderSide(color: Color(0xFF7A9E6E)),
                 ),
               ),
+              items: intervalOptions.map((String option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() => _selectedInterval = value);
+                }
+              },
             ),
             Spacer(),
             Container(
