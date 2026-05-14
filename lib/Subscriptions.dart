@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Categories.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'Settings.dart';
 import 'settingsValues.dart';

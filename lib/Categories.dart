@@ -40,7 +40,22 @@ Color getColourFromString(String colour) {
 
 class _CategoriesState extends State<Categories> {
   final CollectionReference categories = FirebaseFirestore.instance.collection(
-      'categories');
+    'categories',
+  );
+
+  Future<void> updateCategories(String id) async {
+    await categories.doc(id).update({
+      'name': 'new name',
+      'icon': 'new icon',
+      'colour': 'new colour',
+      'subscriptions': 'new subscriptions',
+    });
+  }
+
+  Future<void> deleteCategories(String id) async {
+    await categories.doc(id).delete();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,88 +85,93 @@ class _CategoriesState extends State<Categories> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                  stream: categories.snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Something went wrong'),);
-                    }
+            child: StreamBuilder<QuerySnapshot>(
+              stream: categories.snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Something went wrong'));
+                }
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                    final docs = snapshot.data!.docs;
+                final docs = snapshot.data!.docs;
 
-                    if (docs.isEmpty) {
-                      return Center(child: ValueListenableBuilder<String>(
-                        valueListenable: language,
-                        builder: (context, lang, _) {
-                          return Text(translate('noCategories'));
-                        },
-                      ),
-                      );
-                    }
-
-                    return GridView.builder(
-                      padding: EdgeInsets.all(20),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        final data = docs[index].data() as Map<String, dynamic>;
-
-                        return GestureDetector(
-                          onTap: () {
-                            if (widget.pickMode) {
-                              Navigator.pop(context, data['name'] ?? '');
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CatWithSub(
-                                        categoryName: data['name'] ?? '',
-                                        categoryColor: getColourFromString(
-                                            data['color'] ?? ''),
-                                      ),
-                                ),
-                              );
-                            }
-                          },
-                          child:
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: getColourFromString(data['color'] ?? ''),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.category, color: Colors.white,
-                                    size: 30),
-                                SizedBox(height: 8),
-                                Text(
-                                  data['name'] ?? '',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 12),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
+                if (docs.isEmpty) {
+                  return Center(
+                    child: ValueListenableBuilder<String>(
+                      valueListenable: language,
+                      builder: (context, lang, _) {
+                        return Text(translate('noCategories'));
                       },
-                    );
-                  }
-              )
+                    ),
+                  );
+                }
 
+                return GridView.builder(
+                  padding: EdgeInsets.all(20),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+
+                    return GestureDetector(
+                      onTap: () {
+                        if (widget.pickMode) {
+                          Navigator.pop(context, data['name'] ?? '');
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CatWithSub(
+                                categoryName: data['name'] ?? '',
+                                categoryColor: getColourFromString(
+                                  data['color'] ?? '',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                        onDoubleTap: () {
+                          deleteCategories(docs[index].id);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: getColourFromString(data['color'] ?? ''),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.category,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                data['name'] ?? '',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
           Container(
             width: double.infinity,
@@ -162,25 +182,24 @@ class _CategoriesState extends State<Categories> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Addcat()),
-                  );
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Addcat()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFD6E8CC),
+                foregroundColor: Colors.black,
+                shape: StadiumBorder(),
+                padding: EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: ValueListenableBuilder<String>(
+                valueListenable: language,
+                builder: (context, lang, _) {
+                  return Text(translate('addCategory'));
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFD6E8CC),
-                  foregroundColor: Colors.black,
-                  shape: StadiumBorder(),
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                ValueListenableBuilder<String>(
-                  valueListenable: language,
-                  builder: (context, lang, _) {
-                    return Text(translate('addCategory'));
-                  },
-                ),
+              ),
             ),
           ),
           SizedBox(height: 20),
@@ -256,7 +275,8 @@ class _AddcatState extends State<Addcat> {
 
   //add methods here
   CollectionReference categories = FirebaseFirestore.instance.collection(
-      'categories');
+    'categories',
+  );
 
   String id = '';
   String name = '';
@@ -271,7 +291,7 @@ class _AddcatState extends State<Addcat> {
         'name': name,
         'icon': icon,
         'color': colour,
-        'subscriptions': subscriptions
+        'subscriptions': subscriptions,
       });
       setState(() {
         id = '';
@@ -288,21 +308,18 @@ class _AddcatState extends State<Addcat> {
   }
 
   Future<void> updateCategories(String id) async {
-    await categories
-        .doc(id)
-        .update({
-      'id': 'new id',
+    await categories.doc(id).update({
       'name': 'new name',
       'icon': 'new icon',
       'colour': 'new colour',
-      'subscriptions': 'new subscriptions'
+      'subscriptions': 'new subscriptions',
     });
   }
 
   Future<void> deleteCategories(String id) async {
     await categories.doc(id).delete();
   }
-//HERE
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -359,17 +376,17 @@ class _AddcatState extends State<Addcat> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content:
-                      // Text(
-                      //   'Do not leave any field',
-                      //   style: TextStyle(color: Colors.black),
-                      //   textAlign: TextAlign.center,
-                      // ),
-                      ValueListenableBuilder<String>(
-                        valueListenable: language,
-                        builder: (context, lang, _) {
-                          return Text(translate('empty'));
-                        },
-                      ),
+                          // Text(
+                          //   'Do not leave any field',
+                          //   style: TextStyle(color: Colors.black),
+                          //   textAlign: TextAlign.center,
+                          // ),
+                          ValueListenableBuilder<String>(
+                            valueListenable: language,
+                            builder: (context, lang, _) {
+                              return Text(translate('empty'));
+                            },
+                          ),
                       backgroundColor: Colors.green[300],
                     ),
                   );
@@ -381,17 +398,17 @@ class _AddcatState extends State<Addcat> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content:
-                      // Text(
-                      //   'Category Successfully Added',
-                      //   style: TextStyle(color: Colors.black),
-                      //   textAlign: TextAlign.center,
-                      // ),
-                      ValueListenableBuilder<String>(
-                        valueListenable: language,
-                        builder: (context, lang, _) {
-                          return Text(translate('s'));
-                        },
-                      ),
+                          // Text(
+                          //   'Category Successfully Added',
+                          //   style: TextStyle(color: Colors.black),
+                          //   textAlign: TextAlign.center,
+                          // ),
+                          ValueListenableBuilder<String>(
+                            valueListenable: language,
+                            builder: (context, lang, _) {
+                              return Text(translate('s'));
+                            },
+                          ),
                       backgroundColor: Colors.green[300],
                     ),
                   );
@@ -403,8 +420,7 @@ class _AddcatState extends State<Addcat> {
                 shape: StadiumBorder(),
                 padding: EdgeInsets.symmetric(vertical: 16),
               ),
-              child:
-              ValueListenableBuilder<String>(
+              child: ValueListenableBuilder<String>(
                 valueListenable: language,
                 builder: (context, lang, _) {
                   return Text(translate('addCategory'));
@@ -459,7 +475,6 @@ class _AddcatState extends State<Addcat> {
                         return Text(translate('categories'));
                       },
                     ),
-
                   ],
                 ),
               ),
@@ -471,112 +486,116 @@ class _AddcatState extends State<Addcat> {
   }
 }
 
-
 class CatWithSub extends StatelessWidget {
   final String categoryName;
   final Color categoryColor;
 
-  const CatWithSub(
-      {super.key, required this.categoryColor, required this.categoryName});
+  const CatWithSub({
+    super.key,
+    required this.categoryColor,
+    required this.categoryName,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final subs = FirebaseFirestore.instance.collection('subscriptions').where(
-        'category', isEqualTo: categoryName).where(
-        'userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid);
+    final subs = FirebaseFirestore.instance
+        .collection('subscriptions')
+        .where('category', isEqualTo: categoryName)
+        .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('$categoryName', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
-
       ),
       body: StreamBuilder<QuerySnapshot>(
-          stream: subs.snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
+        stream: subs.snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-            final docs = snapshot.data!.docs;
+          final docs = snapshot.data!.docs;
 
-            if (docs.isEmpty) {
-              return Center(child:
-              ValueListenableBuilder<String>(
+          if (docs.isEmpty) {
+            return Center(
+              child: ValueListenableBuilder<String>(
                 valueListenable: language,
                 builder: (context, lang, _) {
                   return Text(translate('noSubscriptions'));
                 },
               ),
               // Text('No Subscriptions in this Category'),
-              );
-            }
-
-            return ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: docs.length,
-              itemBuilder: (context, index) {
-                final data = docs[index].data() as Map<String, dynamic>;
-                return Container(
-                  margin: EdgeInsets.only(bottom: 10),
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: categoryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                            Icons.attach_money, color: Colors.white, size: 22),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          data['name'] ?? '',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      ValueListenableBuilder<String>(
-                        valueListenable: currency,
-                        builder: (context, selectedCurrency, _) {
-                          double price = (data['price'] as num).toDouble();
-                          double converted = convertPrice(
-                              price, selectedCurrency);
-                          return Text(
-                            '$selectedCurrency ${converted.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: categoryColor,
-                            ),
-                          );
-                        },
-                      ),
-                      // Text(
-                      //   '\$${data['price']}',
-                      //   style: TextStyle(
-                      //     fontSize: 16,
-                      //     fontWeight: FontWeight.bold,
-                      //     color: categoryColor,
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                );
-              },
             );
           }
-      ),
 
+          return ListView.builder(
+            padding: EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              return Container(
+                margin: EdgeInsets.only(bottom: 10),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: categoryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.attach_money,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        data['name'] ?? '',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    ValueListenableBuilder<String>(
+                      valueListenable: currency,
+                      builder: (context, selectedCurrency, _) {
+                        double price = (data['price'] as num).toDouble();
+                        double converted = convertPrice(
+                          price,
+                          selectedCurrency,
+                        );
+                        return Text(
+                          '$selectedCurrency ${converted.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: categoryColor,
+                          ),
+                        );
+                      },
+                    ),
+                    // Text(
+                    //   '\$${data['price']}',
+                    //   style: TextStyle(
+                    //     fontSize: 16,
+                    //     fontWeight: FontWeight.bold,
+                    //     color: categoryColor,
+                    //   ),
+                    // ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
 
       bottomNavigationBar: Container(
         padding: EdgeInsets.symmetric(vertical: 10),
