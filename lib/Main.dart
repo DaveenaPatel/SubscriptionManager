@@ -25,24 +25,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder <ThemeMode>(
-      valueListenable: theme,
-      builder: (context, mode, _){
+    // return ValueListenableBuilder <ThemeMode>(
+    //   valueListenable: theme,
+    //   builder: (context, mode, _){
         return ValueListenableBuilder<String>(
           valueListenable: font,
           builder: (context, fonts, _) {
             return MaterialApp(
               home: SplashScreenPage(),
-              themeMode: mode,
+              // themeMode: mode,
               theme: ThemeData.light().copyWith(textTheme: textTheme(fonts)),
               darkTheme: ThemeData.dark().copyWith(textTheme: textTheme(fonts)),
               debugShowCheckedModeBanner: false,
             );
           },
         );
-
-      },
-    );
+    //   },
+    // );
   }
 
   TextTheme? textTheme(String fonts) {

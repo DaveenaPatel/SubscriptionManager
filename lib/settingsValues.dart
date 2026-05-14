@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-final ValueNotifier<ThemeMode> theme = ValueNotifier(ThemeMode.light);
+// final ValueNotifier<ThemeMode> theme = ValueNotifier(ThemeMode.light);
 final ValueNotifier<String> font = ValueNotifier('Roboto');
 final ValueNotifier<String> currency = ValueNotifier('CAD');
 final ValueNotifier<String> language = ValueNotifier('English');

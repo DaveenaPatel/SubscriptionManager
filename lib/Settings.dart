@@ -44,32 +44,32 @@ class _SettingsState extends State<Settings> {
         // mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              TextButton(
-                onPressed: () => {},
-                child:
-                ValueListenableBuilder<String>(
-                  valueListenable: language,
-                  builder: (context, lang, _) {
-                    return Text(translate('darkMode'), style: TextStyle(color: Colors.black));
-                  },
-                ),
-                // Text('Dark Mode', style: TextStyle(color: Colors.black)),
-              ),
-              ValueListenableBuilder<ThemeMode>(
-                valueListenable: theme,
-                builder: (context, mode, _) {
-                  return Switch(
-                    value: mode == ThemeMode.dark,
-                    activeColor: Colors.green[900],
-
-                    onChanged: (value) {
-                      theme.value = value ? ThemeMode.dark : ThemeMode.light;
-                    },
-                  );
-                },
-              ),
+          // Row(
+          //   children: [
+          //     TextButton(
+          //       onPressed: () => {},
+          //       child:
+          //       ValueListenableBuilder<String>(
+          //         valueListenable: language,
+          //         builder: (context, lang, _) {
+          //           return Text(translate('darkMode'), style: TextStyle(color: Colors.black));
+          //         },
+          //       ),
+          //       // Text('Dark Mode', style: TextStyle(color: Colors.black)),
+          //     ),
+          //     ValueListenableBuilder<ThemeMode>(
+          //       valueListenable: theme,
+          //       builder: (context, mode, _) {
+          //         return Switch(
+          //           value: mode == ThemeMode.dark,
+          //           activeColor: Colors.green[900],
+          //
+          //           onChanged: (value) {
+          //             theme.value = value ? ThemeMode.dark : ThemeMode.light;
+          //           },
+          //         );
+          //       },
+          //     ),
 
               // Switch(
               //   value: light,
@@ -82,8 +82,8 @@ class _SettingsState extends State<Settings> {
               //     });
               //   },
               // ),
-            ],
-          ),
+            // ],
+          // ),
           TextButton(
             onPressed: () => {
               Navigator.push(
