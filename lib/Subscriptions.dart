@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'Categories.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'Settings.dart';
+import 'settingsValues.dart';
 
 // main subscription screen
 class Subscriptions extends StatefulWidget {
@@ -52,9 +54,24 @@ class _SubscriptionsState extends State<Subscriptions> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Subscriptions', textAlign: TextAlign.center),
+        title: ValueListenableBuilder<String>(
+          valueListenable: language,
+          builder: (context, lang, _) {
+            return Text(translate('subscriptions'));
+          },
+        ),
+        // Text('Subscriptions', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
+        leading: GestureDetector(
+          onHorizontalDragEnd: (d) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Settings()),
+            );
+          },
+          child: Icon(Icons.arrow_circle_right_outlined),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: subscriptionsQuery.snapshots(),
@@ -78,22 +95,34 @@ class _SubscriptionsState extends State<Subscriptions> {
                         Icon(Icons.subscriptions_outlined,
                             size: 64, color: Colors.grey[400]),
                         SizedBox(height: 16),
-                        Text(
-                          'No subscriptions found.',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[600],
-                          ),
+                        ValueListenableBuilder<String>(
+                          valueListenable: language,
+                          builder: (context, lang, _) {
+                            return Text(translate('noSubscriptions'), style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold,color: Colors.grey[600],),);
+                          },
                         ),
+                        // Text(
+                        //   'No subscriptions found.',
+                        //   style: TextStyle(
+                        //     fontSize: 18,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Colors.grey[600],
+                        //   ),
+                        // ),
                         SizedBox(height: 8),
-                        Text(
-                          'Add a new subscription to get started!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
+                        ValueListenableBuilder<String>(
+                          valueListenable: language,
+                          builder: (context, lang, _) {
+                            return Text(translate('addSubscription2'), style: TextStyle( fontSize: 14,color: Colors.grey[400],) ,);
+                          },
                         ),
+                        // Text(
+                        //   'Add a new subscription to get started!',
+                        //   style: TextStyle(
+                        //     fontSize: 14,
+                        //     color: Colors.grey[400],
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -211,17 +240,29 @@ class _SubscriptionsState extends State<Subscriptions> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Total Monthly',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  // Text(
+                  //   'Total Monthly',
+                  //   style: TextStyle(color: Colors.white70, fontSize: 12),
+                  // ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: language,
+                    builder: (context, lang, _) {
+                      return Text(translate('totalMonthly'), style: TextStyle(color: Colors.white70, fontSize: 12),);
+                    },
                   ),
-                  Text(
-                    totalMonthly.toStringAsFixed(2),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: currency,
+                    builder: (context, selectedCurrency, _) {
+                      double converted = convertPrice(totalMonthly, selectedCurrency);
+                      return Text(
+                        '$selectedCurrency ${converted.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -258,7 +299,13 @@ class _SubscriptionsState extends State<Subscriptions> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.monetization_on_outlined, color: Colors.black),
-                  Text('Subscriptions', style: TextStyle(fontSize: 12)),
+                  ValueListenableBuilder<String>(
+                    valueListenable: language,
+                    builder: (context, lang, _) {
+                      return Text(translate('subscriptions'), style: TextStyle(fontSize: 12));
+                    },
+                  ),
+                  // Text('Subscriptions', style: TextStyle(fontSize: 12)),
                 ],
               ),
               GestureDetector(
@@ -272,7 +319,13 @@ class _SubscriptionsState extends State<Subscriptions> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.grid_view, color: Colors.black),
-                    Text('Categories', style: TextStyle(fontSize: 12)),
+                    ValueListenableBuilder<String>(
+                      valueListenable: language,
+                      builder: (context, lang, _) {
+                        return Text(translate('categories'));
+                      },
+                    ),
+                    // Text('Categories', style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -360,8 +413,16 @@ class QuickChartPie extends StatelessWidget {
             width: 300,
             height: 300,
             child: Center(
-              child: Text('Chart unavailable',
-                  style: TextStyle(color: Colors.grey)),
+              child:
+              ValueListenableBuilder<String>(
+                valueListenable: language,
+                builder: (context, lang, _) {
+                  return Text(translate('chart'), style: TextStyle(color: Colors.grey));
+                },
+              ),
+
+              // Text('Chart unavailable',
+              //     style: TextStyle(color: Colors.grey)),
             ),
           );
         },
@@ -411,10 +472,17 @@ class _AddSubscriptionState extends State<AddSubscription> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Subscription Successfully Added',
-            style: TextStyle(color: Colors.black),
-            textAlign: TextAlign.center,
+          content:
+          // Text(
+          //   'Subscription Successfully Added',
+          //   style: TextStyle(color: Colors.black),
+          //   textAlign: TextAlign.center,
+          // ),
+          ValueListenableBuilder<String>(
+            valueListenable: language,
+            builder: (context, lang, _) {
+              return Text(translate('ss'), style: TextStyle(color: Colors.black));
+            },
           ),
           backgroundColor: Colors.green[300],
         ),
@@ -427,7 +495,14 @@ class _AddSubscriptionState extends State<AddSubscription> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Subscription', textAlign: TextAlign.center),
+        title:
+        ValueListenableBuilder<String>(
+          valueListenable: language,
+          builder: (context, lang, _) {
+            return Text(translate('addSubscription'), textAlign: TextAlign.center);
+          },
+        ),
+        // Text('Add Subscription', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
       ),
@@ -439,7 +514,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: 'Name',
+                labelText: translate('name'),
                 labelStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
@@ -454,7 +529,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
               controller: priceController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Price',
+                labelText: translate('price'),
                 labelStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
@@ -480,7 +555,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
                 child: TextField(
                   controller: categoryController,
                   decoration: InputDecoration(
-                    labelText: 'Category',
+                    labelText: translate('category'),
                     labelStyle: TextStyle(color: Colors.grey),
                     suffixIcon: Icon(Icons.arrow_drop_down),
                     enabledBorder: UnderlineInputBorder(
@@ -497,7 +572,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
             TextField(
               controller: intervalController,
               decoration: InputDecoration(
-                labelText: 'Interval',
+                labelText: translate('interval'),
                 labelStyle: TextStyle(color: Colors.grey),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
@@ -524,7 +599,13 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
                 child:
-                Text('Add Subscription', style: TextStyle(fontSize: 16)),
+                ValueListenableBuilder<String>(
+                  valueListenable: language,
+                  builder: (context, lang, _) {
+                    return Text(translate('addSubscription'), style: TextStyle(fontSize: 16));
+                  },
+                ),
+                // Text('Add Subscription', style: TextStyle(fontSize: 16)),
               ),
             ),
             SizedBox(height: 16),
@@ -577,11 +658,18 @@ class _EditSubscriptionState extends State<EditSubscription> {
     if (nameController.text.isEmpty || priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Do not leave any field',
-            style: TextStyle(color: Colors.black),
-            textAlign: TextAlign.center,
+          content:
+          ValueListenableBuilder<String>(
+            valueListenable: language,
+            builder: (context, lang, _) {
+              return Text(translate('empty'), style: TextStyle(color: Colors.black), textAlign: TextAlign.center,);
+            },
           ),
+          // Text(
+          //   'Do not leave any field',
+          //   style: TextStyle(color: Colors.black),
+          //   textAlign: TextAlign.center,
+          // ),
           backgroundColor: Colors.green[300],
         ),
       );
@@ -595,10 +683,17 @@ class _EditSubscriptionState extends State<EditSubscription> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Subscription Updated',
-              style: TextStyle(color: Colors.black),
-              textAlign: TextAlign.center,
+            content:
+            // Text(
+            //   'Subscription Updated',
+            //   style: TextStyle(color: Colors.black),
+            //   textAlign: TextAlign.center,
+            // ),
+            ValueListenableBuilder<String>(
+              valueListenable: language,
+              builder: (context, lang, _) {
+                return Text(translate('subscriptionUpdated'), style: TextStyle(color: Colors.black), textAlign: TextAlign.center,);
+              },
             ),
             backgroundColor: Colors.green[300],
           ),
@@ -614,7 +709,14 @@ class _EditSubscriptionState extends State<EditSubscription> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Subscription', textAlign: TextAlign.center),
+        title:
+        ValueListenableBuilder<String>(
+          valueListenable: language,
+          builder: (context, lang, _) {
+            return Text(translate('editSubscriptions'),textAlign: TextAlign.center,);
+          },
+        ),
+        // Text('Edit Subscription', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
       ),
@@ -625,7 +727,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: 'Name',
+                labelText: translate('name'),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
@@ -639,7 +741,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
               controller: priceController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Price',
+                labelText: translate('price'),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
@@ -664,7 +766,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
                 child: TextField(
                   controller: categoryController,
                   decoration: InputDecoration(
-                    labelText: 'Category',
+                    labelText: translate('category'),
                     suffixIcon: Icon(Icons.arrow_drop_down),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -680,7 +782,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
             TextField(
               controller: intervalController,
               decoration: InputDecoration(
-                labelText: 'Interval',
+                labelText: translate('interval'),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
@@ -705,7 +807,14 @@ class _EditSubscriptionState extends State<EditSubscription> {
                   shape: StadiumBorder(),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: Text('SAVE CHANGES', style: TextStyle(fontSize: 16)),
+                child:
+                ValueListenableBuilder<String>(
+                  valueListenable: language,
+                  builder: (context, lang, _) {
+                    return Text(translate('saveChanges'), style:TextStyle(fontSize: 16));
+                  },
+                ),
+                // Text('SAVE CHANGES', style: TextStyle(fontSize: 16)),
               ),
             ),
             SizedBox(height: 16),
