@@ -43,14 +43,14 @@ class _CategoriesState extends State<Categories> {
     'categories',
   );
 
-  Future<void> updateCategories(String id) async {
-    await categories.doc(id).update({
-      'name': 'new name',
-      'icon': 'new icon',
-      'colour': 'new colour',
-      'subscriptions': 'new subscriptions',
-    });
-  }
+  // Future<void> updateCategories(String id) async {
+  //   await categories.doc(id).update({
+  //     'name': 'new name',
+  //     'icon': 'new icon',
+  //     'colour': 'new colour',
+  //     'subscriptions': 'new subscriptions',
+  //   });
+  // }
 
   Future<void> deleteCategories(String id) async {
     await categories.doc(id).delete();
@@ -86,7 +86,7 @@ class _CategoriesState extends State<Categories> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: categories.snapshots(),
+              stream: FirebaseFirestore.instance.collection('categories').where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Something went wrong'));
@@ -292,6 +292,7 @@ class _AddcatState extends State<Addcat> {
         'icon': icon,
         'color': colour,
         'subscriptions': subscriptions,
+        'userId': FirebaseAuth.instance.currentUser!.uid,
       });
       setState(() {
         id = '';
