@@ -41,7 +41,6 @@ Map<String, Map<String, String>> translations = {
     'chart': 'Chart Unavailable',
     'ss': 'Subscription Successfully Added',
     'subscriptionUpdated': 'Subscription Successfully Updated',
-
   },
   'Français' : {
     'categories': 'Catégories',
@@ -70,9 +69,34 @@ Map<String, Map<String, String>> translations = {
     'chart': 'Graphique indisponible',
     'ss': 'Abonnement ajouté avec succès',
     'subscriptionUpdated': 'Abonnement mis à jour avec succès',
-
-
-
+  },
+  'Español' : {
+    'categories': 'Categorías',
+    'subscriptions': 'Suscripciones',
+    'addCategory': 'Añadir una categoría',
+    'settings': 'Configuración',
+    'darkMode': 'Mode sombre',
+    'font': 'Fuente',
+    'currency': 'Moneda',
+    'languages': 'Idiomas',
+    'logOut': 'Cerrar sesión',
+    'totalMonthly': 'Total Mensual',
+    'noCategories': 'No se encontraron categorías',
+    'noSubscriptions': 'No se encontraron suscripciones',
+    'editSubscriptions': 'Editar suscripciones',
+    'addSubscription': 'Añadir una suscripción',
+    'addSubscription2': 'Añadir una suscripción para empezar.',
+    'saveChanges': 'Guardar',
+    'name': 'Nombre',
+    'price': 'Precio',
+    'category': 'Categoría',
+    'interval': 'Intervalo',
+    'icon': 'Icono',
+    'empty': 'No deje ningún campo vacío.',
+    's': 'Categoría añadida correctamente',
+    'chart': 'Gráfico no disponible',
+    'ss': 'Suscripción añadida correctamente',
+    'subscriptionUpdated': 'Suscripción actualizada correctamente',
   }
 };
 

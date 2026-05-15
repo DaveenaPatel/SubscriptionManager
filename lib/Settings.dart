@@ -300,7 +300,7 @@ class _LanguagesState extends State<Languages> {
         valueListenable: language,
         builder: (context, selectedLanguage, _) {
           return Column(
-            children: ['English', 'Français'].map((lang) {
+            children: ['English', 'Français', 'Español'].map((lang) {
               return RadioListTile<String>(
                 title: Text(lang),
                 value: lang,
