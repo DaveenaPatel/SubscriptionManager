@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 // final ValueNotifier<ThemeMode> theme = ValueNotifier(ThemeMode.light);
 final ValueNotifier<String> font = ValueNotifier('Roboto');
@@ -11,6 +13,25 @@ double convertPrice(double price, String currency){
     result = price * 0.74;
   }
   return result;
+}
+
+Future<void> setCurrency() async{
+    LocationPermission permission = await Geolocator.requestPermission();
+    if(permission == LocationPermission.denied){
+      return;
+    }
+
+    Position p = await Geolocator.getCurrentPosition();
+
+    List<Placemark> placemark = await placemarkFromCoordinates(p.latitude, p.longitude);
+
+    String country = placemark.first.country ?? '';
+
+    if(country == 'United States'){
+      currency.value = 'USD';
+    } else {
+      currency.value = 'CAD';
+    }
 }
 
 Map<String, Map<String, String>> translations = {

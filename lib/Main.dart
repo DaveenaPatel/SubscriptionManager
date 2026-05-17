@@ -6,7 +6,6 @@ import 'splash.dart';
 import 'settingsValues.dart';
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: FirebaseOptions(
@@ -16,7 +15,7 @@ void main() async {
       projectId: "subwallet-864ed",
     ),
   );
-
+  await setCurrency();
   runApp(const MyApp());
 }
 
