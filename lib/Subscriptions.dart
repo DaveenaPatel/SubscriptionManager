@@ -4,9 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'Settings.dart';
 import 'settingsValues.dart';
+import 'notifications.dart';
 
-// main subscription screen
-// interval options
 const List<String> intervalOptions = [
   '1 Week',
   '2 Weeks',
@@ -42,7 +41,6 @@ class _SubscriptionsState extends State<Subscriptions> {
     });
   }
 
-  // Fetch category colors from Firestore
   Future<Map<String, String>> _fetchCategoryColors() async {
     final snapshot =
     await FirebaseFirestore.instance.collection('categories').get();
@@ -57,6 +55,7 @@ class _SubscriptionsState extends State<Subscriptions> {
   }
 
   Future<void> _deleteSubscription(String id) async {
+    await cancelNotification(id);
     await subscriptionsRef.doc(id).delete();
   }
 
@@ -68,13 +67,13 @@ class _SubscriptionsState extends State<Subscriptions> {
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
         leading: GestureDetector(
-          onHorizontalDragEnd: (d) {
+          onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => Settings()),
             );
           },
-          child: Icon(Icons.arrow_circle_right_outlined),
+          child: Icon(Icons.settings),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -87,7 +86,6 @@ class _SubscriptionsState extends State<Subscriptions> {
 
           final docs = snapshot.data!.docs;
 
-          // Empty state
           if (docs.isEmpty) {
             return Column(
               children: [
@@ -107,14 +105,6 @@ class _SubscriptionsState extends State<Subscriptions> {
                             color: Colors.grey[600],
                           ),
                         ),
-                        // Text(
-                        //   'No subscriptions found.',
-                        //   style: TextStyle(
-                        //     fontSize: 18,
-                        //     fontWeight: FontWeight.bold,
-                        //     color: Colors.grey[600],
-                        //   ),
-                        // ),
                         SizedBox(height: 8),
                         Text(
                           'Add a new subscription to get started!',
@@ -123,13 +113,6 @@ class _SubscriptionsState extends State<Subscriptions> {
                             color: Colors.grey[400],
                           ),
                         ),
-                        // Text(
-                        //   'Add a new subscription to get started!',
-                        //   style: TextStyle(
-                        //     fontSize: 14,
-                        //     color: Colors.grey[400],
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),
@@ -165,6 +148,19 @@ class _SubscriptionsState extends State<Subscriptions> {
                     final colorStr = _categoryColors[category] ?? '';
                     final bubbleColor = getColourFromString(colorStr);
 
+                    // Parse start date for renewal display
+                    DateTime? startDate;
+                    try {
+                      final ts = doc['startDate'];
+                      if (ts != null) startDate = (ts as Timestamp).toDate();
+                    } catch (_) {}
+
+                    DateTime? nextRenewal;
+                    if (startDate != null) {
+                      nextRenewal = getNextRenewalDate(
+                          startDate, doc['interval'] ?? '1 Month');
+                    }
+
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
                       padding:
@@ -175,7 +171,6 @@ class _SubscriptionsState extends State<Subscriptions> {
                       ),
                       child: Row(
                         children: [
-                          // Icon bubble
                           Container(
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -187,9 +182,21 @@ class _SubscriptionsState extends State<Subscriptions> {
                           ),
                           SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              doc['name'],
-                              style: TextStyle(fontSize: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  doc['name'],
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                if (nextRenewal != null)
+                                  Text(
+                                    'Renews ${nextRenewal.day}/${nextRenewal.month}/${nextRenewal.year}',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[500]),
+                                  ),
+                              ],
                             ),
                           ),
                           IconButton(
@@ -204,6 +211,7 @@ class _SubscriptionsState extends State<Subscriptions> {
                                     currentPrice: doc['price'].toString(),
                                     currentCategory: category,
                                     currentInterval: doc['interval'],
+                                    currentStartDate: startDate,
                                     subscriptionsRef: subscriptionsRef,
                                   ),
                                 ),
@@ -247,20 +255,19 @@ class _SubscriptionsState extends State<Subscriptions> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Text(
-                  //   'Total Monthly',
-                  //   style: TextStyle(color: Colors.white70, fontSize: 12),
-                  // ),
                   ValueListenableBuilder<String>(
                     valueListenable: language,
                     builder: (context, lang, _) {
-                      return Text(translate('totalMonthly'), style: TextStyle(color: Colors.white70, fontSize: 12),);
+                      return Text(translate('totalMonthly'),
+                          style:
+                          TextStyle(color: Colors.white70, fontSize: 12));
                     },
                   ),
                   ValueListenableBuilder<String>(
                     valueListenable: currency,
                     builder: (context, selectedCurrency, _) {
-                      double converted = convertPrice(totalMonthly, selectedCurrency);
+                      double converted =
+                      convertPrice(totalMonthly, selectedCurrency);
                       return Text(
                         '$selectedCurrency ${converted.toStringAsFixed(2)}',
                         style: TextStyle(
@@ -309,10 +316,10 @@ class _SubscriptionsState extends State<Subscriptions> {
                   ValueListenableBuilder<String>(
                     valueListenable: language,
                     builder: (context, lang, _) {
-                      return Text(translate('subscriptions'), style: TextStyle(fontSize: 12));
+                      return Text(translate('subscriptions'),
+                          style: TextStyle(fontSize: 12));
                     },
                   ),
-                  // Text('Subscriptions', style: TextStyle(fontSize: 12)),
                 ],
               ),
               GestureDetector(
@@ -332,7 +339,6 @@ class _SubscriptionsState extends State<Subscriptions> {
                         return Text(translate('categories'));
                       },
                     ),
-                    // Text('Categories', style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -382,7 +388,8 @@ class QuickChartPie extends StatelessWidget {
 
     final labels = categoryTotals.keys.toList();
     final values = categoryTotals.values.toList();
-    final colors = labels.map((l) => _toRgba(categoryColors[l] ?? '')).toList();
+    final colors =
+    labels.map((l) => _toRgba(categoryColors[l] ?? '')).toList();
 
     final labelsJson = '[${labels.map((l) => '"$l"').join(',')}]';
     final valuesJson = '[${values.join(',')}]';
@@ -395,7 +402,8 @@ class QuickChartPie extends StatelessWidget {
           '"options":{"plugins":{"legend":{"position":"bottom"}}}}',
     );
 
-    final url = 'https://quickchart.io/chart?c=$chartConfig&w=300&h=300&backgroundColor=white';
+    final url =
+        'https://quickchart.io/chart?c=$chartConfig&w=300&h=300&backgroundColor=white';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -443,62 +451,86 @@ class _AddSubscriptionState extends State<AddSubscription> {
   final priceController = TextEditingController();
   final categoryController = TextEditingController();
   String _selectedInterval = intervalOptions.first;
+  DateTime? _selectedDate;
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(primary: Color(0xFF7A9E6E)),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
 
   Future<void> _addSubscription() async {
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
-        categoryController.text.isEmpty) {
+        categoryController.text.isEmpty ||
+        _selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Do not leave any field',
+            _selectedDate == null
+                ? 'Please select a start date'
+                : translate('empty'),
             style: TextStyle(color: Colors.black),
             textAlign: TextAlign.center,
           ),
           backgroundColor: Colors.green[300],
         ),
       );
-    } else {
-      await widget.subscriptionsRef.add({
-        'userId': FirebaseAuth.instance.currentUser!.uid,
-        'name': nameController.text,
-        'price': double.tryParse(priceController.text) ?? 0,
-        'category': categoryController.text,
-        'interval': _selectedInterval,
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-          // Text(
-          //   'Subscription Successfully Added',
-          //   style: TextStyle(color: Colors.black),
-          //   textAlign: TextAlign.center,
-          // ),
-          ValueListenableBuilder<String>(
-            valueListenable: language,
-            builder: (context, lang, _) {
-              return Text(translate('ss'), style: TextStyle(color: Colors.black));
-            },
-          ),
-          backgroundColor: Colors.green[300],
-        ),
-      );
-      Navigator.pop(context);
+      return;
     }
+
+    final docRef = await widget.subscriptionsRef.add({
+      'userId': FirebaseAuth.instance.currentUser!.uid,
+      'name': nameController.text,
+      'price': double.tryParse(priceController.text) ?? 0,
+      'category': categoryController.text,
+      'interval': _selectedInterval,
+      'startDate': Timestamp.fromDate(_selectedDate!),
+    });
+
+    await scheduleRenewalNotification(
+      docId: docRef.id,
+      subscriptionName: nameController.text,
+      startDate: _selectedDate!,
+      interval: _selectedInterval,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: ValueListenableBuilder<String>(
+          valueListenable: language,
+          builder: (context, lang, _) {
+            return Text(translate('ss'),
+                style: TextStyle(color: Colors.black));
+          },
+        ),
+        backgroundColor: Colors.green[300],
+      ),
+    );
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-        ValueListenableBuilder<String>(
+        title: ValueListenableBuilder<String>(
           valueListenable: language,
           builder: (context, lang, _) {
-            return Text(translate('addSubscription'), textAlign: TextAlign.center);
+            return Text(translate('addSubscription'),
+                textAlign: TextAlign.center);
           },
         ),
-        // Text('Add Subscription', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
       ),
@@ -543,9 +575,7 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   MaterialPageRoute(
                       builder: (context) => Categories(pickMode: true)),
                 );
-                if (selected != null) {
-                  categoryController.text = selected;
-                }
+                if (selected != null) categoryController.text = selected;
               },
               child: AbsorbPointer(
                 child: TextField(
@@ -565,12 +595,6 @@ class _AddSubscriptionState extends State<AddSubscription> {
               ),
             ),
             SizedBox(height: 24),
-            // Interval dropdown
-            Text(
-              'Billing Interval',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            SizedBox(height: 4),
             DropdownButtonFormField<String>(
               value: _selectedInterval,
               decoration: InputDecoration(
@@ -585,15 +609,41 @@ class _AddSubscriptionState extends State<AddSubscription> {
               ),
               items: intervalOptions.map((String option) {
                 return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
+                    value: option, child: Text(option));
               }).toList(),
               onChanged: (String? value) {
-                if (value != null) {
-                  setState(() => _selectedInterval = value);
-                }
+                if (value != null) setState(() => _selectedInterval = value);
               },
+            ),
+            SizedBox(height: 24),
+            // Start date picker
+            GestureDetector(
+              onTap: _pickDate,
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Colors.grey[300]!)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today,
+                        color: Colors.grey, size: 18),
+                    SizedBox(width: 10),
+                    Text(
+                      _selectedDate == null
+                          ? 'Select start date'
+                          : 'Start date: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                      style: TextStyle(
+                        color: _selectedDate == null
+                            ? Colors.grey
+                            : Colors.black87,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             Spacer(),
             Container(
@@ -611,14 +661,13 @@ class _AddSubscriptionState extends State<AddSubscription> {
                   shape: StadiumBorder(),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child:
-                ValueListenableBuilder<String>(
+                child: ValueListenableBuilder<String>(
                   valueListenable: language,
                   builder: (context, lang, _) {
-                    return Text(translate('addSubscription'), style: TextStyle(fontSize: 16));
+                    return Text(translate('addSubscription'),
+                        style: TextStyle(fontSize: 16));
                   },
                 ),
-                // Text('Add Subscription', style: TextStyle(fontSize: 16)),
               ),
             ),
             SizedBox(height: 16),
@@ -636,6 +685,7 @@ class EditSubscription extends StatefulWidget {
   final String currentPrice;
   final String currentCategory;
   final String currentInterval;
+  final DateTime? currentStartDate;
   final CollectionReference subscriptionsRef;
 
   const EditSubscription({
@@ -645,6 +695,7 @@ class EditSubscription extends StatefulWidget {
     required this.currentPrice,
     required this.currentCategory,
     required this.currentInterval,
+    required this.currentStartDate,
     required this.subscriptionsRef,
   });
 
@@ -657,6 +708,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
   late TextEditingController priceController;
   late TextEditingController categoryController;
   late String _selectedInterval;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -667,56 +719,83 @@ class _EditSubscriptionState extends State<EditSubscription> {
     _selectedInterval = intervalOptions.contains(widget.currentInterval)
         ? widget.currentInterval
         : intervalOptions.first;
+    _selectedDate = widget.currentStartDate;
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(primary: Color(0xFF7A9E6E)),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
   }
 
   Future<void> _updateSubscription() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-          ValueListenableBuilder<String>(
+          content: ValueListenableBuilder<String>(
             valueListenable: language,
             builder: (context, lang, _) {
-              return Text(translate('empty'), style: TextStyle(color: Colors.black), textAlign: TextAlign.center,);
+              return Text(translate('empty'),
+                  style: TextStyle(color: Colors.black),
+                  textAlign: TextAlign.center);
             },
           ),
-          // Text(
-          //   'Do not leave any field',
-          //   style: TextStyle(color: Colors.black),
-          //   textAlign: TextAlign.center,
-          // ),
           backgroundColor: Colors.green[300],
         ),
       );
-    } else {
-      try {
-        await widget.subscriptionsRef.doc(widget.docId).update({
-          'name': nameController.text,
-          'price': double.tryParse(priceController.text) ?? 0,
-          'category': categoryController.text,
-          'interval': _selectedInterval,
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-            // Text(
-            //   'Subscription Updated',
-            //   style: TextStyle(color: Colors.black),
-            //   textAlign: TextAlign.center,
-            // ),
-            ValueListenableBuilder<String>(
-              valueListenable: language,
-              builder: (context, lang, _) {
-                return Text(translate('subscriptionUpdated'), style: TextStyle(color: Colors.black), textAlign: TextAlign.center,);
-              },
-            ),
-            backgroundColor: Colors.green[300],
-          ),
-        );
-        Navigator.pop(context);
-      } catch (error) {
-        print('Failed to update: $error');
+      return;
+    }
+
+    try {
+      final updateData = <String, dynamic>{
+        'name': nameController.text,
+        'price': double.tryParse(priceController.text) ?? 0,
+        'category': categoryController.text,
+        'interval': _selectedInterval,
+      };
+      if (_selectedDate != null) {
+        updateData['startDate'] = Timestamp.fromDate(_selectedDate!);
       }
+
+      await widget.subscriptionsRef.doc(widget.docId).update(updateData);
+
+      // Reschedule notification with updated info
+      if (_selectedDate != null) {
+        await cancelNotification(widget.docId);
+        await scheduleRenewalNotification(
+          docId: widget.docId,
+          subscriptionName: nameController.text,
+          startDate: _selectedDate!,
+          interval: _selectedInterval,
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: ValueListenableBuilder<String>(
+            valueListenable: language,
+            builder: (context, lang, _) {
+              return Text(translate('subscriptionUpdated'),
+                  style: TextStyle(color: Colors.black),
+                  textAlign: TextAlign.center);
+            },
+          ),
+          backgroundColor: Colors.green[300],
+        ),
+      );
+      Navigator.pop(context);
+    } catch (error) {
+      print('Failed to update: $error');
     }
   }
 
@@ -724,14 +803,13 @@ class _EditSubscriptionState extends State<EditSubscription> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-        ValueListenableBuilder<String>(
+        title: ValueListenableBuilder<String>(
           valueListenable: language,
           builder: (context, lang, _) {
-            return Text(translate('editSubscriptions'),textAlign: TextAlign.center,);
+            return Text(translate('editSubscriptions'),
+                textAlign: TextAlign.center);
           },
         ),
-        // Text('Edit Subscription', textAlign: TextAlign.center),
         centerTitle: true,
         backgroundColor: Color(0xFF7A9E6E),
       ),
@@ -773,9 +851,7 @@ class _EditSubscriptionState extends State<EditSubscription> {
                   MaterialPageRoute(
                       builder: (context) => Categories(pickMode: true)),
                 );
-                if (selected != null) {
-                  categoryController.text = selected;
-                }
+                if (selected != null) categoryController.text = selected;
               },
               child: AbsorbPointer(
                 child: TextField(
@@ -794,15 +870,6 @@ class _EditSubscriptionState extends State<EditSubscription> {
               ),
             ),
             SizedBox(height: 24),
-            // Interval dropdown
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Billing Interval',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ),
-            SizedBox(height: 4),
             DropdownButtonFormField<String>(
               value: _selectedInterval,
               decoration: InputDecoration(
@@ -816,15 +883,41 @@ class _EditSubscriptionState extends State<EditSubscription> {
               ),
               items: intervalOptions.map((String option) {
                 return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
+                    value: option, child: Text(option));
               }).toList(),
               onChanged: (String? value) {
-                if (value != null) {
-                  setState(() => _selectedInterval = value);
-                }
+                if (value != null) setState(() => _selectedInterval = value);
               },
+            ),
+            SizedBox(height: 24),
+            // Start date picker
+            GestureDetector(
+              onTap: _pickDate,
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Colors.grey[300]!)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today,
+                        color: Colors.grey, size: 18),
+                    SizedBox(width: 10),
+                    Text(
+                      _selectedDate == null
+                          ? 'Select start date'
+                          : 'Start date: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                      style: TextStyle(
+                        color: _selectedDate == null
+                            ? Colors.grey
+                            : Colors.black87,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             Spacer(),
             Container(
@@ -842,14 +935,13 @@ class _EditSubscriptionState extends State<EditSubscription> {
                   shape: StadiumBorder(),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child:
-                ValueListenableBuilder<String>(
+                child: ValueListenableBuilder<String>(
                   valueListenable: language,
                   builder: (context, lang, _) {
-                    return Text(translate('saveChanges'), style:TextStyle(fontSize: 16));
+                    return Text(translate('saveChanges'),
+                        style: TextStyle(fontSize: 16));
                   },
                 ),
-                // Text('SAVE CHANGES', style: TextStyle(fontSize: 16)),
               ),
             ),
             SizedBox(height: 16),

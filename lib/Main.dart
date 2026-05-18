@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'splash.dart';
 import 'settingsValues.dart';
+import 'notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ void main() async {
     ),
   );
   await setCurrency();
+  await initNotifications();
   runApp(const MyApp());
 }
 
